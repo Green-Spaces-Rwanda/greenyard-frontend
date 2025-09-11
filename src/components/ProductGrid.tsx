@@ -32,14 +32,10 @@ const ProductGrid: React.FC = () => {
 
   return (
     <>
-      <section className="py-16 bg-gray-50">
+      <section className="py-4 bg-gray-50">
         <div className="container mx-auto px-4">
           {/* Section Header */}
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              {state.selectedCategory === 'all' ? 'All Products' : 
-               state.selectedCategory === 'flowers' ? 'Beautiful Flowers' : 'Quality Seedlings'}
-            </h2>
             {state.searchQuery && (
               <p className="text-gray-600">
                 Showing results for "{state.searchQuery}" ({filteredProducts.length} items)
@@ -66,10 +62,10 @@ const ProductGrid: React.FC = () => {
                 Try adjusting your search or browse different categories
               </p>
               <button
-                onClick={() => {
-                  dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
-                  dispatch({ type: 'SET_CATEGORY', payload: 'all' });
-                }}
+                // onClick={() => {
+                //   dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
+                //   dispatch({ type: 'SET_CATEGORY', payload: 'all' });
+                // }}
                 className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Show All Products

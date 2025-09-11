@@ -51,9 +51,14 @@ const Header: React.FC = () => {
             <div className="flex items-center">
               <button 
                 onClick={() => navigateToPage('home')}
-                className="text-2xl font-bold text-green-700 hover:text-green-800 transition-colors"
+                className="flex items-center space-x-2 text-2xl font-bold text-green-700 hover:text-green-800 transition-colors"
               >
-                🌿 GreenYard
+                <img 
+                  src="/logo.png" 
+                  alt="GreenYard Logo" 
+                  className="w-8 h-8 object-contain"
+                />
+                <span>GreenYard</span>
               </button>
             </div>
 

@@ -11,7 +11,7 @@ export type GetProductsQuery = {
 
 import { Product } from '../types';
 
-const BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://77.237.243.20:3000';
+const BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://api.greeneryard.online';
 const API_BASE = `${BASE_URL.replace(/\/$/, '')}/api/v1`;
 
 export async function fetchProducts(query: GetProductsQuery): Promise<{ products: Product[]; pagination: any }>{

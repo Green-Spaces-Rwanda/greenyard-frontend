@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, CreditCard, Smartphone, Building } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { paymentMethods } from '../data/mockData';
 import { CheckoutData } from '../types';
 
 interface CheckoutModalProps {
@@ -256,7 +255,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Payment Method</h3>
                 <div className="space-y-3">
-                  {paymentMethods.map((method) => (
+                  {[{ id: 'mtn', name: 'MTN Mobile Money', type: 'mobile_money', description: 'Pay with MTN Mobile Money' },
+                    { id: 'airtel', name: 'Airtel Money', type: 'mobile_money', description: 'Pay with Airtel Money' },
+                    { id: 'paystack', name: 'Paystack', type: 'card', description: 'Pay with credit/debit card via Paystack' },
+                    { id: 'bank', name: 'Bank Transfer', type: 'bank', description: 'Direct bank transfer' }].map((method) => (
                     <label
                       key={method.id}
                       className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -299,7 +301,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
                   <strong>Order Total:</strong> {formatPrice(getCartTotal())}
                 </p>
                 <p className="text-green-800">
-                  <strong>Payment Method:</strong> {paymentMethods.find(m => m.id === checkoutData.paymentMethod)?.name}
+                  <strong>Payment Method:</strong> {{ mtn: 'MTN Mobile Money', airtel: 'Airtel Money', paystack: 'Paystack', bank: 'Bank Transfer' }[checkoutData.paymentMethod as 'mtn' | 'airtel' | 'paystack' | 'bank']}
                 </p>
               </div>
               <button

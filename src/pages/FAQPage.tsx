@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
-import { faqs } from '../data/mockData';
 import { FAQ } from '../types';
 
 const FAQPage: React.FC = () => {
@@ -8,6 +7,7 @@ const FAQPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
 
+  const faqs: FAQ[] = [];
   const categories = [
     { id: 'all', name: 'All Questions', count: faqs.length },
     { id: 'general', name: 'General', count: faqs.filter(f => f.category === 'general').length },

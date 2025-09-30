@@ -61,7 +61,19 @@ const ProductGrid: React.FC = () => {
 
           {/* Products Grid */}
           {loading ? (
-            <div className="text-center py-16 text-gray-600">Loading products...</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                  <div className="h-64 bg-gray-200" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-1/3" />
+                    <div className="h-5 bg-gray-200 rounded w-2/3" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                    <div className="h-10 bg-gray-200 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : error ? (
             <div className="text-center py-16 text-red-600">{error}</div>
           ) : items.length > 0 ? (

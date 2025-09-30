@@ -1,18 +1,22 @@
+export interface ProductImage {
+  id: string;
+  url: string;
+  alt: string;
+  isThumbnail: boolean;
+  order: number;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;
-  description: string;
   price: number;
-  originalPrice?: number;
-  image: string;
-  category: 'flowers' | 'seedlings';
-  subcategory: string;
+  category: 'FLOWERS' | 'SEEDLINGS';
   inStock: boolean;
   featured?: boolean;
-  isNew?: boolean;
-  isOnSale?: boolean;
-  rating: number;
-  reviews: number;
+  createdAt?: string;
+  updatedAt?: string;
+  images: ProductImage[];
 }
 
 export interface CartItem {

@@ -10,7 +10,7 @@ const Hero: React.FC = () => {
 
   return (
     <section className="bg-gradient-to-br from-green-50 to-green-100">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-6 md:px-10 lg:px-16 py-12">
         <div className="flex flex-col lg:flex-row items-center gap-12">
           {/* Hero Text - Left Side */}
           <div className="flex-1 text-center lg:text-left">

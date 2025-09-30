@@ -55,7 +55,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main>
+      <main className="container mx-auto px-6 md:px-10 lg:px-16">
         {renderCurrentPage()}
       </main>
       <Footer />

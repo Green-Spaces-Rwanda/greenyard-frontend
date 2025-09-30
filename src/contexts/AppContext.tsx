@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { Product, CartItem, Currency } from '../types';
-import { products } from '../data/mockData';
+// products removed; cart will persist snapshots
 
 interface AppState {
   cart: CartItem[];
@@ -139,7 +139,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
   };
 
-  type PersistedCartItem = { id: string; quantity: number };
+  type PersistedCartItem = { product: Product; quantity: number };
 
   const hydrateCartFromStorage = (): CartItem[] => {
     if (typeof window === 'undefined') return [];
@@ -152,14 +152,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       if (!raw) return [];
       const persisted: PersistedCartItem[] = JSON.parse(raw);
       if (!Array.isArray(persisted)) return [];
-      const items: CartItem[] = persisted
-        .map((entry) => {
-          const product = products.find(p => p.id === entry.id);
-          if (!product) return null;
-          return { product, quantity: Math.max(1, Math.floor(entry.quantity || 1)) } as CartItem;
-        })
-        .filter(Boolean) as CartItem[];
-      return items;
+      return persisted.map((entry) => ({
+        product: entry.product,
+        quantity: Math.max(1, Math.floor(entry.quantity || 1))
+      }));
     } catch {
       return [];
     }
@@ -192,7 +188,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         deleteCookie(CART_COOKIE_NAME);
         return;
       }
-      const compact: PersistedCartItem[] = state.cart.map(ci => ({ id: ci.product.id, quantity: ci.quantity }));
+      const compact: PersistedCartItem[] = state.cart.map(ci => ({ product: ci.product, quantity: ci.quantity }));
       window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(compact));
       setCookie(CART_COOKIE_NAME, '1', CART_COOKIE_MAX_AGE_SECONDS);
     } catch {

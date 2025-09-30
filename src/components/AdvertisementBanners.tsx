@@ -4,10 +4,10 @@ import { ArrowRight, Gift, Clock } from 'lucide-react';
 const AdvertisementBanners: React.FC = () => {
   return (
     <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6 md:px-10 lg:px-16">
         <div className="grid md:grid-cols-2 gap-8">
           {/* New Products Banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white group cursor-pointer">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white group">
             <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
             <div className="relative p-8 md:p-12">
               <div className="flex items-center space-x-2 mb-4">
@@ -23,10 +23,10 @@ const AdvertisementBanners: React.FC = () => {
                 Discover our latest selection of vibrant flowers and premium seedlings, 
                 perfect for the spring season.
               </p>
-              <button className="flex items-center space-x-2 bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-200 group-hover:transform group-hover:scale-105">
+              <div className="flex items-center space-x-2 bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold select-none">
                 <span>Shop New Arrivals</span>
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </div>
             </div>
             <div className="absolute -right-10 -bottom-10 opacity-20">
               <div className="text-8xl">🌸</div>
@@ -34,7 +34,7 @@ const AdvertisementBanners: React.FC = () => {
           </div>
 
           {/* Sale Banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white group cursor-pointer">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white group">
             <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
             <div className="relative p-8 md:p-12">
               <div className="flex items-center space-x-2 mb-4">
@@ -50,10 +50,10 @@ const AdvertisementBanners: React.FC = () => {
                 Huge savings on selected flowers and seedlings. 
                 Don't miss out on these amazing deals!
               </p>
-              <button className="flex items-center space-x-2 bg-white text-red-700 px-6 py-3 rounded-lg font-semibold hover:bg-red-50 transition-all duration-200 group-hover:transform group-hover:scale-105">
+              <div className="flex items-center space-x-2 bg-white text-red-700 px-6 py-3 rounded-lg font-semibold select-none">
                 <span>Shop Sale Items</span>
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </div>
             </div>
             <div className="absolute -right-10 -bottom-10 opacity-20">
               <div className="text-8xl">🎉</div>

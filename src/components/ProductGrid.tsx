@@ -1,26 +1,42 @@
-import React, { useState } from 'react';
-import { products } from '../data/mockData';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import ProductCard from './ProductCard';
 import ProductModal from './ProductModal';
 import { Product } from '../types';
+import { fetchProducts } from '../services/productsApi';
 
 const ProductGrid: React.FC = () => {
   const { state } = useApp();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Filter products based on search and category
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = state.searchQuery === '' ||
-      product.name.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
-      product.subcategory.toLowerCase().includes(state.searchQuery.toLowerCase());
+  const [items, setItems] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const matchesCategory = state.selectedCategory === 'all' ||
-      product.category === state.selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchProducts({
+          search: state.searchQuery || undefined,
+          category: state.selectedCategory === 'all' ? undefined : (state.selectedCategory === 'flowers' ? 'FLOWERS' : 'SEEDLINGS'),
+          inStock: undefined,
+          featured: undefined,
+          page: 1,
+          pageSize: 20,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+        });
+        setItems(result.products);
+      } catch (e: any) {
+        setError(e?.message || 'Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [state.searchQuery, state.selectedCategory]);
 
   const handleViewDetails = (product: Product) => {
     setSelectedProduct(product);
@@ -33,25 +49,35 @@ const ProductGrid: React.FC = () => {
   return (
     <>
       <section className="py-4 bg-gray-50">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-6 md:px-10 lg:px-16">
           {/* Section Header */}
           <div className="text-center mb-12">
             {state.searchQuery && (
               <p className="text-gray-600">
-                Showing results for "{state.searchQuery}" ({filteredProducts.length} items)
+                Showing results for "{state.searchQuery}" ({items.length} items)
               </p>
             )}
           </div>
 
           {/* Products Grid */}
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onViewDetails={handleViewDetails}
-                />
+          {loading ? (
+            <div className="text-center py-16 text-gray-600">Loading products...</div>
+          ) : error ? (
+            <div className="text-center py-16 text-red-600">{error}</div>
+          ) : items.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {items.map((product) => (
+                <div key={product.id} className={product.featured ? 'md:col-span-1 relative' : ''}>
+                  {product.featured && (
+                    <span className="absolute -top-2 -left-2 z-10 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-2 py-1 rounded">
+                      FEATURED
+                    </span>
+                  )}
+                  <ProductCard
+                    product={product}
+                    onViewDetails={handleViewDetails}
+                  />
+                </div>
               ))}
             </div>
           ) : (

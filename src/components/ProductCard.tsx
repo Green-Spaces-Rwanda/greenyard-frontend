@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Eye } from 'lucide-react';
 import { Product } from '../types';
+import { toImageUrl } from '../services/productsApi';
 import { useApp } from '../contexts/AppContext';
 
 interface ProductCardProps {
@@ -28,25 +29,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
-        <img
-          src={product.image}
-          alt={product.name}
+    <img
+          src={toImageUrl(product.images?.find(i => i.isThumbnail)?.url || product.images?.[0]?.url)}
+          alt={product.images?.find(i => i.isThumbnail)?.alt || product.name}
           className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
           onLoad={() => setImageLoading(false)}
         />
         
         {/* Badges */}
         <div className="absolute top-3 left-3 space-y-2">
-          {product.isNew && (
-            <span className="bg-blue-500 text-white px-2 py-1 text-xs font-semibold rounded-full">
-              NEW
-            </span>
-          )}
-          {product.isOnSale && (
-            <span className="bg-red-500 text-white px-2 py-1 text-xs font-semibold rounded-full">
-              SALE
-            </span>
-          )}
           {product.featured && (
             <span className="bg-yellow-500 text-white px-2 py-1 text-xs font-semibold rounded-full">
               ⭐ FEATURED
@@ -101,47 +92,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
 
         {/* Rating */}
         <div className="flex items-center mb-3">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.floor(product.rating)
-                    ? 'text-yellow-400 fill-current'
-                    : 'text-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-sm text-gray-600 ml-2">
-            {product.rating} ({product.reviews})
-          </span>
+          {/* Rating removed: not present in API spec */}
         </div>
 
         {/* Price */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-lg md:text-xl font-bold text-gray-900">
               {formatPrice(product.price)}
             </span>
-            {product.originalPrice && (
-              <span className="text-sm text-gray-500 line-through">
-                {formatPrice(product.originalPrice)}
-              </span>
-            )}
           </div>
-          {product.isOnSale && product.originalPrice && (
-            <span className="text-sm text-green-600 font-semibold">
-              {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-            </span>
-          )}
         </div>
 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
           disabled={!product.inStock}
-          className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+          className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
             product.inStock
               ? 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg active:transform active:scale-95'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'

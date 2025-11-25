@@ -1,6 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { X, Cookie, Settings } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { fetchCookieConsentContent } from '../services/contentApi';
+import { CookieBannerAction, CookieBannerContent } from '../types';
+
+const defaultCookieContent: CookieBannerContent = {
+  title: 'We use cookies',
+  body: 'We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.',
+  actions: [
+    { label: 'Privacy Policy', variant: 'link', href: '/privacy' }
+  ]
+};
+
+const CookieActionButton: React.FC<{ action: CookieBannerAction }> = ({ action }) => {
+  const handleClick = () => {
+    if (action.href) {
+      if (action.href.startsWith('http')) {
+        window.open(action.href, '_blank', 'noopener');
+      } else {
+        window.location.href = action.href;
+      }
+    }
+  };
+
+  const variantClass = (() => {
+    switch (action.variant) {
+      case 'primary':
+        return 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors';
+      case 'secondary':
+        return 'border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors';
+      default:
+        return 'text-green-600 hover:text-green-700 font-medium';
+    }
+  })();
+
+  return (
+    <button onClick={handleClick} className={variantClass}>
+      {action.label}
+    </button>
+  );
+};
 
 const CookieConsent: React.FC = () => {
   const { state, dispatch } = useApp();
@@ -12,12 +51,34 @@ const CookieConsent: React.FC = () => {
     marketing: false
   });
 
+  const [copy, setCopy] = useState<CookieBannerContent>(defaultCookieContent);
+
   useEffect(() => {
     const consent = localStorage.getItem('cookieConsent');
     if (!consent && !state.cookieConsent) {
       setShowBanner(true);
     }
   }, [state.cookieConsent]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchCookieConsentContent()
+      .then((data) => {
+        if (!mounted || !data) return;
+        setCopy({
+          title: data.title || defaultCookieContent.title,
+          body: data.body || defaultCookieContent.body,
+          actions: data.actions?.length ? data.actions : defaultCookieContent.actions
+        });
+      })
+      .catch(() => {
+        // keep default copy
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleAcceptAll = () => {
     const consentData = {
@@ -65,11 +126,17 @@ const CookieConsent: React.FC = () => {
             <div className="flex items-start space-x-3 flex-1">
               <Cookie className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">We use cookies</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{copy.title}</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  We use cookies to enhance your browsing experience, serve personalized content, 
-                  and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
+                  {copy.body}
                 </p>
+                {copy.actions?.length ? (
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    {copy.actions.map((action) => (
+                      <CookieActionButton key={action.label} action={action} />
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
             

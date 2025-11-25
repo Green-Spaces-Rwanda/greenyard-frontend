@@ -11,9 +11,9 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose }) => {
-  const { dispatch, formatPrice } = useApp();
+  const { dispatch, formatPrice, isFavorite } = useApp();
   const [quantity, setQuantity] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
+  const isLiked = isFavorite(product.id);
 
   if (!isOpen) return null;
 
@@ -133,7 +133,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
               </button>
 
               <button
-                onClick={() => setIsLiked(!isLiked)}
+                onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', payload: product })}
                 className={`p-3 rounded-lg border-2 transition-colors ${
                   isLiked
                     ? 'border-red-500 bg-red-50 text-red-500'

@@ -10,9 +10,7 @@ export type GetProductsQuery = {
 };
 
 import { Product } from '../types';
-
-const BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://api.greeneryard.online';
-const API_BASE = `${BASE_URL.replace(/\/$/, '')}/api/v1`;
+import { BASE_URL, buildApiUrl } from './apiConfig';
 
 export async function fetchProducts(query: GetProductsQuery): Promise<{ products: Product[]; pagination: any }>{
   const params = new URLSearchParams();
@@ -25,21 +23,21 @@ export async function fetchProducts(query: GetProductsQuery): Promise<{ products
   if (query.sortBy) params.set('sortBy', query.sortBy);
   if (query.sortOrder) params.set('sortOrder', query.sortOrder);
 
-  const res = await fetch(`${API_BASE}/products?${params.toString()}`);
+  const res = await fetch(buildApiUrl(`/products?${params.toString()}`));
   if (!res.ok) throw new Error('Failed to fetch products');
   const json = await res.json();
   return { products: json.data as Product[], pagination: json.pagination };
 }
 
 export async function fetchCategories(): Promise<{ category: 'FLOWERS' | 'SEEDLINGS'; count: number }[]>{
-  const res = await fetch(`${API_BASE}/products/categories`);
+  const res = await fetch(buildApiUrl('/products/categories'));
   if (!res.ok) throw new Error('Failed to fetch categories');
   const json = await res.json();
   return json.data as { category: 'FLOWERS' | 'SEEDLINGS'; count: number }[];
 }
 
 export async function fetchProductById(id: string): Promise<Product>{
-  const res = await fetch(`${API_BASE}/products/${id}`);
+  const res = await fetch(buildApiUrl(`/products/${id}`));
   if (!res.ok) throw new Error('Failed to fetch product');
   const json = await res.json();
   return json.data as Product;
@@ -48,7 +46,7 @@ export async function fetchProductById(id: string): Promise<Product>{
 export function toImageUrl(path?: string): string {
   if (!path) return '';
   if (/^https?:\/\//i.test(path)) return path;
-  return `${BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
+  return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
 

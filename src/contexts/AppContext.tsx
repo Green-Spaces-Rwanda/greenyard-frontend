@@ -4,6 +4,7 @@ import { Product, CartItem, Currency } from '../types';
 
 interface AppState {
   cart: CartItem[];
+  favorites: Product[];
   currency: Currency;
   searchQuery: string;
   selectedCategory: string;
@@ -16,6 +17,8 @@ type AppAction =
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
+  | { type: 'TOGGLE_FAVORITE'; payload: Product }
+  | { type: 'REMOVE_FAVORITE'; payload: string }
   | { type: 'SET_CURRENCY'; payload: Currency }
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_CATEGORY'; payload: string }
@@ -29,6 +32,7 @@ const currencies: Currency[] = [
 
 const initialState: AppState = {
   cart: [],
+  favorites: [],
   currency: currencies[0],
   searchQuery: '',
   selectedCategory: 'all',
@@ -74,6 +78,25 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'CLEAR_CART':
       return { ...state, cart: [] };
 
+    case 'TOGGLE_FAVORITE':
+      const isFavorite = state.favorites.some(fav => fav.id === action.payload.id);
+      if (isFavorite) {
+        return {
+          ...state,
+          favorites: state.favorites.filter(fav => fav.id !== action.payload.id)
+        };
+      }
+      return {
+        ...state,
+        favorites: [...state.favorites, action.payload]
+      };
+
+    case 'REMOVE_FAVORITE':
+      return {
+        ...state,
+        favorites: state.favorites.filter(fav => fav.id !== action.payload)
+      };
+
     case 'SET_CURRENCY':
       return { ...state, currency: action.payload };
 
@@ -101,6 +124,8 @@ interface AppContextType {
   formatPrice: (price: number) => string;
   getCartTotal: () => number;
   getCartItemCount: () => number;
+  getFavoritesCount: () => number;
+  isFavorite: (productId: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,6 +147,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const CART_STORAGE_KEY = 'gy_cart_v1';
   const CART_COOKIE_NAME = 'gy_cart_enabled';
   const CART_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 180; // 180 days
+  
+  // Keys and helpers for favorites persistence
+  const FAVORITES_STORAGE_KEY = 'gy_favorites_v1';
+  const FAVORITES_COOKIE_NAME = 'gy_favorites_enabled';
+  const FAVORITES_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365; // 365 days
 
   const getCookie = (name: string): string | null => {
     if (typeof document === 'undefined') return null;
@@ -161,9 +191,27 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const hydrateFavoritesFromStorage = (): Product[] => {
+    if (typeof window === 'undefined') return [];
+    // Only restore if our favorites cookie exists
+    const hasFavoritesCookie = !!getCookie(FAVORITES_COOKIE_NAME);
+    if (!hasFavoritesCookie) return [];
+
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+      if (!raw) return [];
+      const persisted: Product[] = JSON.parse(raw);
+      if (!Array.isArray(persisted)) return [];
+      return persisted;
+    } catch {
+      return [];
+    }
+  };
+
   const [state, dispatch] = useReducer(appReducer, initialState, (base) => ({
     ...base,
-    cart: hydrateCartFromStorage()
+    cart: hydrateCartFromStorage(),
+    favorites: hydrateFavoritesFromStorage()
   }));
 
   const formatPrice = (price: number): string => {
@@ -177,6 +225,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const getCartItemCount = (): number => {
     return state.cart.reduce((count, item) => count + item.quantity, 0);
+  };
+
+  const getFavoritesCount = (): number => {
+    return state.favorites.length;
+  };
+
+  const isFavorite = (productId: string): boolean => {
+    return state.favorites.some(fav => fav.id === productId);
   };
 
   // Persist cart changes to localStorage and a long-lived cookie
@@ -196,6 +252,22 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   }, [state.cart]);
 
+  // Persist favorites changes to localStorage and a long-lived cookie
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (state.favorites.length === 0) {
+        window.localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        deleteCookie(FAVORITES_COOKIE_NAME);
+        return;
+      }
+      window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(state.favorites));
+      setCookie(FAVORITES_COOKIE_NAME, '1', FAVORITES_COOKIE_MAX_AGE_SECONDS);
+    } catch {
+      // Swallow storage errors to avoid breaking UX
+    }
+  }, [state.favorites]);
+
   return (
     <AppContext.Provider value={{
       state,
@@ -203,7 +275,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       currencies,
       formatPrice,
       getCartTotal,
-      getCartItemCount
+      getCartItemCount,
+      getFavoritesCount,
+      isFavorite
     }}>
       {children}
     </AppContext.Provider>

@@ -1,16 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import CheckoutModal from './CheckoutModal';
+import { fetchCartDrawerContent } from '../services/contentApi';
+import { CartDrawerContent } from '../types';
+import { toImageUrl } from '../services/productsApi';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const defaultCartContent: CartDrawerContent = {
+  emptyState: {
+    title: 'Your cart is empty',
+    description: 'Add some beautiful plants to get started!',
+    ctaLabel: 'Continue Shopping'
+  },
+  promoMessage: 'Free delivery on orders over $50',
+  checkoutCta: 'Proceed to Checkout'
+};
+
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { state, dispatch, formatPrice, getCartTotal, getCartItemCount } = useApp();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [cartContent, setCartContent] = useState<CartDrawerContent>(defaultCartContent);
+  const [contentLoaded, setContentLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || contentLoaded) return;
+    let mounted = true;
+    fetchCartDrawerContent()
+      .then((data) => {
+        if (!mounted || !data) return;
+        setCartContent({
+          emptyState: data.emptyState || defaultCartContent.emptyState,
+          promoMessage: data.promoMessage || defaultCartContent.promoMessage,
+          checkoutCta: data.checkoutCta || defaultCartContent.checkoutCta
+        });
+        setContentLoaded(true);
+      })
+      .catch(() => {
+        setContentLoaded(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen, contentLoaded]);
 
   if (!isOpen) return null;
 
@@ -29,6 +66,19 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const handleCheckout = () => {
     setShowCheckout(true);
   };
+
+  const handleEmptyCta = () => {
+    if (cartContent.emptyState?.ctaHref) {
+      if (cartContent.emptyState.ctaHref.startsWith('http')) {
+        window.open(cartContent.emptyState.ctaHref, '_blank', 'noopener');
+      } else if (cartContent.emptyState.ctaHref.startsWith('/')) {
+        window.location.href = cartContent.emptyState.ctaHref;
+      }
+    }
+    onClose();
+  };
+
+  const emptyState = cartContent.emptyState || defaultCartContent.emptyState;
 
   return (
     <>
@@ -55,13 +105,13 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
               {state.cart.length === 0 ? (
                 <div className="text-center py-16">
                   <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
-                  <p className="text-gray-500 mb-4">Add some beautiful plants to get started!</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{emptyState?.title}</h3>
+                  <p className="text-gray-500 mb-4">{emptyState?.description}</p>
                   <button
-                    onClick={onClose}
+                    onClick={handleEmptyCta}
                     className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    Continue Shopping
+                    {emptyState?.ctaLabel || 'Continue Shopping'}
                   </button>
                 </div>
               ) : (
@@ -69,8 +119,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   {state.cart.map((item) => (
                     <div key={item.product.id} className="flex items-center space-x-4 bg-gray-50 rounded-lg p-4">
                       <img
-                        src={item.product.image}
-                        alt={item.product.name}
+                        src={toImageUrl(item.product.images?.find(i => i.isThumbnail)?.url || item.product.images?.[0]?.url)}
+                        alt={item.product.images?.find(i => i.isThumbnail)?.alt || item.product.images?.[0]?.alt || item.product.name}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
                       <div className="flex-1">
@@ -110,6 +160,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             {/* Footer */}
             {state.cart.length > 0 && (
               <div className="border-t border-gray-200 p-4 space-y-4">
+                {cartContent.promoMessage && (
+                  <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg">
+                    {cartContent.promoMessage}
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">Total:</span>
                   <span className="text-xl font-bold text-green-600">
@@ -120,7 +175,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   onClick={handleCheckout}
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
                 >
-                  Proceed to Checkout
+                  {cartContent.checkoutCta || defaultCartContent.checkoutCta}
                 </button>
                 <button
                   onClick={onClose}

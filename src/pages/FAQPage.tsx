@@ -1,13 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { FAQ } from '../types';
+import { fetchFAQs, fetchFooterContent } from '../services/contentApi';
+import { useApp } from '../contexts/AppContext';
+
+const defaultFAQs: FAQ[] = [
+  {
+    id: 'faq-1',
+    question: 'How do I place an order?',
+    answer: 'You can place an order by browsing our catalog, selecting your desired flowers or seedlings, and clicking "Add to Cart". Then proceed to checkout to complete your purchase.',
+    category: 'general'
+  },
+  {
+    id: 'faq-2',
+    question: 'What payment methods do you accept?',
+    answer: 'We accept mobile money (MTN, Airtel), credit/debit cards, and bank transfers. All payments are processed securely.',
+    category: 'payment'
+  },
+  {
+    id: 'faq-3',
+    question: 'How long does delivery take?',
+    answer: 'Delivery typically takes 1-3 business days within Kigali, and 3-5 business days for other areas in Rwanda. We will contact you to confirm your delivery time.',
+    category: 'shipping'
+  },
+  {
+    id: 'faq-4',
+    question: 'Do you deliver outside Kigali?',
+    answer: 'Yes, we deliver throughout Rwanda. Delivery times and fees may vary based on your location. Contact us for specific delivery information to your area.',
+    category: 'shipping'
+  },
+  {
+    id: 'faq-5',
+    question: 'How should I care for fresh cut flowers?',
+    answer: 'Change the water every 2-3 days, trim stems at an angle, keep them away from direct sunlight and heat sources, and remove any leaves below the waterline.',
+    category: 'care'
+  },
+  {
+    id: 'faq-6',
+    question: 'What is your return policy?',
+    answer: 'We accept returns within 48 hours of delivery if the product arrives damaged or in poor condition. Please contact us immediately with photos of the issue.',
+    category: 'general'
+  },
+  {
+    id: 'faq-7',
+    question: 'How do I care for seedlings?',
+    answer: 'Water when the top inch of soil feels dry, provide 12-16 hours of light daily, maintain consistent temperature between 65-75°F, and transplant when seedlings have 2-4 true leaves.',
+    category: 'care'
+  },
+  {
+    id: 'faq-8',
+    question: 'Can I track my order?',
+    answer: 'Yes, once your order is confirmed, you will receive a tracking number via email or SMS. You can use this to track your order status.',
+    category: 'shipping'
+  }
+];
+
+const defaultPhone = '+250 781 234 567';
 
 const FAQPage: React.FC = () => {
+  const { dispatch } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
+  const [faqs, setFaqs] = useState<FAQ[]>(defaultFAQs);
+  const [phoneNumber, setPhoneNumber] = useState<string>(defaultPhone);
 
-  const faqs: FAQ[] = [];
+  useEffect(() => {
+    let mounted = true;
+    fetchFAQs()
+      .then((data) => {
+        if (!mounted || !data) return;
+        // Only use backend data if it's valid and has items
+        if (Array.isArray(data) && data.length > 0) {
+          setFaqs(data);
+        }
+      })
+      .catch(() => {
+        // Keep defaults on error - backend might not be available yet
+      });
+
+    // Fetch footer content to get phone number
+    fetchFooterContent()
+      .then((data) => {
+        if (!mounted || !data) return;
+        if (data.contact?.phone) {
+          setPhoneNumber(data.contact.phone);
+        }
+      })
+      .catch(() => {
+        // Keep default phone on error
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const categories = [
     { id: 'all', name: 'All Questions', count: faqs.length },
     { id: 'general', name: 'General', count: faqs.filter(f => f.category === 'general').length },
@@ -137,14 +224,20 @@ const FAQPage: React.FC = () => {
             Can't find the answer you're looking for? Our customer support team is here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+            <button
+              onClick={() => {
+                dispatch({ type: 'SET_CURRENT_PAGE', payload: 'contact' });
+                window.scrollTo(0, 0);
+              }}
+              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+            >
               Contact Support
             </button>
             <a
-              href="tel:+250781234567"
+              href={`tel:${phoneNumber.replace(/\s/g, '')}`}
               className="border border-green-600 text-green-600 px-8 py-3 rounded-lg hover:bg-green-100 transition-colors font-semibold"
             >
-              Call +250 781 234 567
+              Call {phoneNumber}
             </a>
           </div>
         </div>

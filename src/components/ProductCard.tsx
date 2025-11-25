@@ -10,22 +10,22 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => {
-  const { dispatch, formatPrice } = useApp();
-  const [isLiked, setIsLiked] = useState(false);
+  const { dispatch, formatPrice, isFavorite } = useApp();
   const [imageLoading, setImageLoading] = useState(true);
+  const isLiked = isFavorite(product.id);
 
   const handleAddToCart = () => {
     dispatch({ type: 'ADD_TO_CART', payload: product });
   };
 
   const handleToggleLike = () => {
-    setIsLiked(!isLiked);
+    dispatch({ type: 'TOGGLE_FAVORITE', payload: product });
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 group overflow-hidden">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col h-full">
       {/* Image Container */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden flex-shrink-0">
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
@@ -37,7 +37,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
         />
         
         {/* Badges */}
-        <div className="absolute top-3 left-3 space-y-2">
+        <div className="absolute top-3 left-3 space-y-2 flex flex-col">
+          {/* Category Badge */}
+          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+            product.category === 'FLOWERS' 
+              ? 'bg-pink-500 text-white' 
+              : 'bg-green-500 text-white'
+          }`}>
+            {product.category}
+          </span>
           {product.featured && (
             <span className="bg-yellow-500 text-white px-2 py-1 text-xs font-semibold rounded-full">
               ⭐ FEATURED
@@ -74,19 +82,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5 flex flex-col flex-grow">
         {/* Category */}
         <span className="text-sm text-green-600 font-medium uppercase tracking-wide">
           {product.subcategory}
         </span>
 
         {/* Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mt-2 mb-2 line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 mt-2 mb-2 line-clamp-2 min-h-[3.5rem]">
           {product.name}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-grow">
           {product.description}
         </p>
 
@@ -108,7 +116,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
         <button
           onClick={handleAddToCart}
           disabled={!product.inStock}
-          className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+          className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 mt-auto ${
             product.inStock
               ? 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg active:transform active:scale-95'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'

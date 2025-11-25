@@ -1,13 +1,67 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, ShoppingCart, Menu, X, Heart } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import CurrencySelector from './CurrencySelector';
 import CartDrawer from './CartDrawer';
+import FavoritesDrawer from './FavoritesDrawer';
+import { fetchHeaderContent } from '../services/contentApi';
+import { HeaderContent, HeaderNavItem } from '../types';
+
+const defaultHeaderContent: HeaderContent = {
+  announcement: 'Free delivery on orders over $50',
+  logo: { url: '/logo.png', alt: 'GreenYard', href: '/' },
+  primaryNav: [
+    { label: 'Home', page: 'home' },
+    { label: 'Help', page: 'help' },
+    { label: 'Contact', page: 'contact' }
+  ],
+  secondaryNav: [
+    { label: 'Help', page: 'help' },
+    { label: 'Contact', page: 'contact' }
+  ],
+  mobileMenu: [
+    { label: 'Home', page: 'home' },
+    { label: 'Help', page: 'help' },
+    { label: 'Contact', page: 'contact' },
+    { label: 'FAQs', page: 'faqs' },
+    { label: 'Shipping Info', page: 'shipping' },
+    { label: 'Returns Policy', page: 'returns' },
+    { label: 'Care Instructions', page: 'care' },
+    { label: 'Privacy Policy', page: 'privacy' },
+    { label: 'Terms of Service', page: 'terms' },
+    { label: 'Cookie Policy', page: 'cookies' }
+  ],
+  searchPlaceholder: 'Search for flowers, seedlings...'
+};
 
 const Header: React.FC = () => {
-  const { state, dispatch, getCartItemCount } = useApp();
+  const { state, dispatch, getCartItemCount, getFavoritesCount } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [headerContent, setHeaderContent] = useState<HeaderContent>(defaultHeaderContent);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchHeaderContent()
+      .then((data) => {
+        if (!mounted || !data) return;
+        setHeaderContent({
+          ...defaultHeaderContent,
+          ...data,
+          primaryNav: data.primaryNav?.length ? data.primaryNav : defaultHeaderContent.primaryNav,
+          secondaryNav: data.secondaryNav?.length ? data.secondaryNav : defaultHeaderContent.secondaryNav,
+          mobileMenu: data.mobileMenu?.length ? data.mobileMenu : defaultHeaderContent.mobileMenu
+        });
+      })
+      .catch(() => {
+        // keep defaults
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +71,38 @@ const Header: React.FC = () => {
     dispatch({ type: 'SET_CURRENT_PAGE', payload: page });
     setIsMenuOpen(false);
   };
+
+  const handleNavItem = (item?: HeaderNavItem) => {
+    if (!item) return;
+    const goToPage = (page?: string) => {
+      if (!page) return;
+      navigateToPage(page);
+    };
+
+    if (item.page) {
+      goToPage(item.page);
+      return;
+    }
+
+    if (item.href) {
+      if (/^https?:\/\//i.test(item.href)) {
+        window.open(item.href, '_blank', 'noopener');
+        return;
+      }
+
+      const normalized = item.href.replace(/^\//, '');
+      goToPage(normalized || 'home');
+    }
+  };
+
+  const announcementText = headerContent.announcement || defaultHeaderContent.announcement;
+  const helpLink = headerContent.secondaryNav?.[0] || { label: 'Help', page: 'help' };
+  const contactLink = headerContent.secondaryNav?.[1] || { label: 'Contact', page: 'contact' };
+  const mobileMenu = (headerContent.mobileMenu && headerContent.mobileMenu.length > 0)
+    ? headerContent.mobileMenu
+    : defaultHeaderContent.mobileMenu!;
+  const searchPlaceholder = headerContent.searchPlaceholder || defaultHeaderContent.searchPlaceholder;
+
   return (
     <>
       <header className="bg-white shadow-md sticky top-0 z-40">
@@ -24,22 +110,22 @@ const Header: React.FC = () => {
           {/* Top bar */}
           <div className="flex items-center justify-between py-2 text-sm text-gray-600 border-b border-gray-100">
             <div className="hidden md:block">
-              <span>Free delivery on orders over $50</span>
+              <span>{announcementText}</span>
             </div>
             <div className="flex items-center space-x-4">
               <CurrencySelector />
               <div className="hidden md:flex items-center space-x-4">
                 <button 
-                  onClick={() => navigateToPage('help')}
+                  onClick={() => handleNavItem(helpLink)}
                   className="hover:text-green-600 transition-colors"
                 >
-                  Help
+                  {helpLink.label || 'Help'}
                 </button>
                 <button 
-                  onClick={() => navigateToPage('contact')}
+                  onClick={() => handleNavItem(contactLink)}
                   className="hover:text-green-600 transition-colors"
                 >
-                  Contact
+                  {contactLink.label || 'Contact'}
                 </button>
               </div>
             </div>
@@ -47,15 +133,16 @@ const Header: React.FC = () => {
 
           {/* Main header */}
           <div className="flex items-center justify-between py-4">
-            {/* Logo */}
             <div className="flex items-center">
               <button 
-                onClick={() => navigateToPage('home')}
+                onClick={() => {
+                  navigateToPage('home');
+                }}
                 className="flex items-center space-x-2 text-2xl font-bold text-green-700 hover:text-green-800 transition-colors"
               >
                 <img 
-                  src="/logo.png" 
-                  alt="GreenYard Logo" 
+                  src="/assets/logo.png" 
+                  alt="Greener Yard Logo" 
                   className="w-8 h-8 object-contain"
                 />
                 <span>GreenYard</span>
@@ -68,7 +155,7 @@ const Header: React.FC = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search for flowers, seedlings..."
+                    placeholder={searchPlaceholder}
                     value={state.searchQuery}
                     onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })}
                     className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
@@ -85,9 +172,17 @@ const Header: React.FC = () => {
 
             {/* Actions */}
             <div className="flex items-center space-x-4">
-              {/* Wishlist */}
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
-                <Heart className="w-6 h-6 text-gray-700" />
+              {/* Favorites */}
+              <button
+                onClick={() => setIsFavoritesOpen(true)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+              >
+                <Heart className={`w-6 h-6 ${getFavoritesCount() > 0 ? 'text-red-500 fill-current' : 'text-gray-700'}`} />
+                {getFavoritesCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {getFavoritesCount()}
+                  </span>
+                )}
               </button>
 
               {/* Cart */}
@@ -119,7 +214,7 @@ const Header: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search for flowers, seedlings..."
+                  placeholder={searchPlaceholder}
                   value={state.searchQuery}
                   onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })}
                   className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
@@ -140,42 +235,15 @@ const Header: React.FC = () => {
           <div className="md:hidden bg-white border-t border-gray-200">
             <div className="container mx-auto px-4 py-4">
               <nav className="space-y-4">
-                <button 
-                  onClick={() => navigateToPage('home')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  Home
-                </button>
-                <button 
-                  onClick={() => navigateToPage('help')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  Help
-                </button>
-                <button 
-                  onClick={() => navigateToPage('contact')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  Contact
-                </button>
-                <button 
-                  onClick={() => navigateToPage('faqs')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  FAQs
-                </button>
-                <button 
-                  onClick={() => navigateToPage('shipping')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  Shipping Info
-                </button>
-                <button 
-                  onClick={() => navigateToPage('care')}
-                  className="block text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  Care Instructions
-                </button>
+                {mobileMenu.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => handleNavItem(item)}
+                    className="block text-gray-700 hover:text-green-600 transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </nav>
             </div>
           </div>
@@ -183,6 +251,7 @@ const Header: React.FC = () => {
       </header>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <FavoritesDrawer isOpen={isFavoritesOpen} onClose={() => setIsFavoritesOpen(false)} />
     </>
   );
 };

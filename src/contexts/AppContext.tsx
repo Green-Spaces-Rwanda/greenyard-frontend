@@ -43,11 +43,13 @@ const initialState: AppState = {
 const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
     case 'ADD_TO_CART':
-      const existingItem = state.cart.find(item => item.product.id === action.payload.id);
+      // Filter out any invalid cart items first
+      const validCart = state.cart.filter(item => item?.product?.id);
+      const existingItem = validCart.find(item => item.product.id === action.payload.id);
       if (existingItem) {
         return {
           ...state,
-          cart: state.cart.map(item =>
+          cart: validCart.map(item =>
             item.product.id === action.payload.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
@@ -56,23 +58,25 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       }
       return {
         ...state,
-        cart: [...state.cart, { product: action.payload, quantity: 1 }]
+        cart: [...validCart, { product: action.payload, quantity: 1 }]
       };
 
     case 'REMOVE_FROM_CART':
       return {
         ...state,
-        cart: state.cart.filter(item => item.product.id !== action.payload)
+        cart: state.cart.filter(item => item?.product?.id && item.product.id !== action.payload)
       };
 
     case 'UPDATE_QUANTITY':
       return {
         ...state,
-        cart: state.cart.map(item =>
-          item.product.id === action.payload.id
-            ? { ...item, quantity: action.payload.quantity }
-            : item
-        )
+        cart: state.cart
+          .filter(item => item?.product?.id) // Remove invalid items
+          .map(item =>
+            item.product.id === action.payload.id
+              ? { ...item, quantity: action.payload.quantity }
+              : item
+          )
       };
 
     case 'CLEAR_CART':
@@ -182,10 +186,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       if (!raw) return [];
       const persisted: PersistedCartItem[] = JSON.parse(raw);
       if (!Array.isArray(persisted)) return [];
-      return persisted.map((entry) => ({
-        product: entry.product,
-        quantity: Math.max(1, Math.floor(entry.quantity || 1))
-      }));
+      // Filter out invalid items and validate product structure
+      return persisted
+        .filter((entry) => entry?.product && entry.product?.id && typeof entry.product.price === 'number')
+        .map((entry) => ({
+          product: entry.product,
+          quantity: Math.max(1, Math.floor(entry.quantity || 1))
+        }));
     } catch {
       return [];
     }
@@ -220,7 +227,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const getCartTotal = (): number => {
-    return state.cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    return state.cart.reduce((total, item) => {
+      if (!item?.product?.id || typeof item.product.price !== 'number') return total;
+      return total + (item.product.price * item.quantity);
+    }, 0);
   };
 
   const getCartItemCount = (): number => {
@@ -244,7 +254,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         deleteCookie(CART_COOKIE_NAME);
         return;
       }
-      const compact: PersistedCartItem[] = state.cart.map(ci => ({ product: ci.product, quantity: ci.quantity }));
+      // Only persist valid items
+      const validItems = state.cart.filter(item => item?.product?.id);
+      if (validItems.length === 0) {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+        deleteCookie(CART_COOKIE_NAME);
+        return;
+      }
+      const compact: PersistedCartItem[] = validItems.map(ci => ({ product: ci.product, quantity: ci.quantity }));
       window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(compact));
       setCookie(CART_COOKIE_NAME, '1', CART_COOKIE_MAX_AGE_SECONDS);
     } catch {

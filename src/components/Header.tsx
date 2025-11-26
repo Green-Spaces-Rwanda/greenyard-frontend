@@ -141,7 +141,7 @@ const Header: React.FC = () => {
                 className="flex items-center space-x-2 text-2xl font-bold text-green-700 hover:text-green-800 transition-colors"
               >
                 <img 
-                  src="/assets/logo.png" 
+                  src="logo.png" 
                   alt="Greener Yard Logo" 
                   className="w-8 h-8 object-contain"
                 />

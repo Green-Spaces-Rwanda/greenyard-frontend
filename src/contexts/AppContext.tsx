@@ -188,11 +188,27 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       if (!Array.isArray(persisted)) return [];
       // Filter out invalid items and validate product structure
       return persisted
-        .filter((entry) => entry?.product && entry.product?.id && typeof entry.product.price === 'number')
-        .map((entry) => ({
-          product: entry.product,
-          quantity: Math.max(1, Math.floor(entry.quantity || 1))
-        }));
+        .filter((entry) => {
+          if (!entry?.product || !entry.product?.id) return false;
+          // Allow price to be number or string that can be converted
+          const price = typeof entry.product.price === 'number' 
+            ? entry.product.price 
+            : (typeof entry.product.price === 'string' ? parseFloat(entry.product.price) : NaN);
+          return !isNaN(price) && price >= 0;
+        })
+        .map((entry) => {
+          // Ensure price is a number
+          const price = typeof entry.product.price === 'number' 
+            ? entry.product.price 
+            : (typeof entry.product.price === 'string' ? parseFloat(entry.product.price) : 0);
+          return {
+            product: {
+              ...entry.product,
+              price: price
+            },
+            quantity: Math.max(1, Math.floor(entry.quantity || 1))
+          };
+        });
     } catch {
       return [];
     }
@@ -228,8 +244,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const getCartTotal = (): number => {
     return state.cart.reduce((total, item) => {
-      if (!item?.product?.id || typeof item.product.price !== 'number') return total;
-      return total + (item.product.price * item.quantity);
+      if (!item?.product?.id) return total;
+      // Convert price to number if it's a string, or use 0 if invalid
+      const price = typeof item.product.price === 'number' 
+        ? item.product.price 
+        : (typeof item.product.price === 'string' ? parseFloat(item.product.price) : 0);
+      if (isNaN(price) || price < 0) return total;
+      return total + (price * item.quantity);
     }, 0);
   };
 

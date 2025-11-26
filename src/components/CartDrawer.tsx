@@ -83,9 +83,15 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+        onClick={onClose}
+      >
         {/* Drawer */}
-        <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
+        <div 
+          className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -116,7 +122,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {state.cart.map((item) => (
+                  {state.cart.filter(item => item?.product?.id).map((item) => {
+                    const price = typeof item.product.price === 'number' 
+                      ? item.product.price 
+                      : (typeof item.product.price === 'string' ? parseFloat(item.product.price) : 0);
+                    return (
                     <div key={item.product.id} className="flex items-center space-x-4 bg-gray-50 rounded-lg p-4">
                       <img
                         src={toImageUrl(item.product.images?.find(i => i.isThumbnail)?.url || item.product.images?.[0]?.url)}
@@ -127,7 +137,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <h3 className="font-medium text-gray-900">{item.product.name}</h3>
                         <p className="text-sm text-gray-500">{item.product.subcategory}</p>
                         <p className="font-semibold text-green-600">
-                          {formatPrice(item.product.price)}
+                          {formatPrice(isNaN(price) ? 0 : price)}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -152,7 +162,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

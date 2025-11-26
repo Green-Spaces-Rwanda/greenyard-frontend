@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import ProductCard from './ProductCard';
 import ProductModal from './ProductModal';
 import { Product } from '../types';
 import { fetchProducts } from '../services/productsApi';
+import { RefreshCw, WifiOff } from 'lucide-react';
 
 const ProductGrid: React.FC = () => {
   const { state } = useApp();
@@ -13,30 +14,31 @@ const ProductGrid: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await fetchProducts({
-          search: state.searchQuery || undefined,
-          category: state.selectedCategory === 'all' ? undefined : (state.selectedCategory === 'flowers' ? 'FLOWERS' : 'SEEDLINGS'),
-          inStock: undefined,
-          featured: undefined,
-          page: 1,
-          pageSize: 20,
-          sortBy: 'createdAt',
-          sortOrder: 'desc'
-        });
-        setItems(result.products);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchProducts({
+        search: state.searchQuery || undefined,
+        category: state.selectedCategory === 'all' ? undefined : (state.selectedCategory === 'flowers' ? 'FLOWERS' : 'SEEDLINGS'),
+        inStock: undefined,
+        featured: undefined,
+        page: 1,
+        pageSize: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
+      setItems(result.products);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
   }, [state.searchQuery, state.selectedCategory]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleViewDetails = (product: Product) => {
     setSelectedProduct(product);
@@ -75,7 +77,28 @@ const ProductGrid: React.FC = () => {
               ))}
             </div>
           ) : error ? (
-            <div className="text-center py-16 text-red-600">{error}</div>
+            <div className="text-center py-16">
+              <div className="flex flex-col items-center justify-center max-w-md mx-auto">
+                <div className="bg-red-50 rounded-full p-4 mb-4">
+                  <WifiOff className="w-12 h-12 text-red-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Products</h3>
+                <p className="text-gray-600 mb-2">
+                  {error}
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  This may be due to internet connectivity issues. Please check your connection and try again.
+                </p>
+                <button
+                  onClick={loadProducts}
+                  disabled={loading}
+                  className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                  <span>{loading ? 'Retrying...' : 'Retry'}</span>
+                </button>
+              </div>
+            </div>
           ) : items.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {items.map((product) => (

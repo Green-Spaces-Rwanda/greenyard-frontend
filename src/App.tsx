@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -60,6 +61,7 @@ const AppContent: React.FC = () => {
       </main>
       <Footer />
       <CookieConsent />
+      <Analytics />
     </div>
   );
 };
